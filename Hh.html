@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxy Turret Wars</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a20;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Game Container */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Canvas */
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* UI Elements */
+        .ui-panel {
+            position: absolute;
+            background-color: rgba(10, 10, 40, 0.8);
+            border: 2px solid #3a3a8a;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 15px rgba(58, 58, 138, 0.5);
+        }
+
+        /* Main Menu */
+        #main-menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 300px;
+            height: 400px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+        }
+
+        #main-menu h1 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #6cf;
+            text-shadow: 0 0 10px #6cf;
+        }
+
+        .menu-button {
+            width: 200px;
+            height: 50px;
+            margin: 10px 0;
+            background-color: #3a3a8a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .menu-button:hover {
+            background-color: #6cf;
+            color: #0a0a20;
+            transform: scale(1.05);
+        }
+
+        /* Game UI */
+        #game-ui {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        #top-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .resource-display {
+            display: flex;
+            align-items: center;
+            background-color: rgba(10, 10, 40, 0.8);
+            border: 2px solid #3a3a8a;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 1.1rem;
+        }
+
+        .resource-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+        #wave-info {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(10, 10, 40, 0.8);
+            border: 2px solid #6cf;
+            border-radius: 8px;
+            padding: 5px 15px;
+            font-size: 1.1rem;
+            z-index: 10;
+        }
+
+        #pause-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(10, 10, 40, 0.8);
+            border: 2px solid #3a3a8a;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #pause-button:hover {
+            background-color: #3a3a8a;
+        }
+
+        /* Shop UI */
+        #shop-ui {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            background-color: rgba(10, 10, 40, 0.9);
+            border: 2px solid #6cf;
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            z-index: 20;
+        }
+
+        #shop-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        #shop-tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .shop-tab {
+            padding: 5px 10px;
+            margin-right: 5px;
+            background-color: #3a3a8a;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .shop-tab.active {
+            background-color: #6cf;
+            color: #0a0a20;
+        }
+
+        .shop-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .shop-item {
+            background-color: rgba(58, 58, 138, 0.5);
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .shop-item:hover {
+            background-color: rgba(108, 204, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .shop-item-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 5px;
+        }
+
+        .shop-item-price {
+            color: #ffcc66;
+            font-weight: bold;
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: none;
+            justify-content: space-between;
+            z-index: 10;
+            margin-bottom: 30px;
+        }
+
+        .mobile-button {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(58, 58, 138, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            touch-action: manipulation;
+        }
+
+        #joystick-area {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 100px;
+            height: 100px;
+            display: none;
+            z-index: 10;
+        }
+
+        #joystick-base {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(58, 58, 138, 0.3);
+            border-radius: 50%;
+        }
+
+        #crystaly1 {
+  margin-right: 25px;
+  right: 20px;
+
+}
+
+        #joystick-handle {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background-color: rgba(108, 204, 255, 0.5);
+            border-radius: 50%;
+            top: 25%;
+            left: 25%;
+        }
+
+        /* Game Over Screen */
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: rgba(10, 10, 40, 0.9);
+            border: 2px solid #f66;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        #game-over h2 {
+            color: #f66;
+            margin-bottom: 20px;
+        }
+
+        /* Pause Menu */
+        #pause-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: rgba(10, 10, 40, 0.9);
+            border: 2px solid #6cf;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        #pause-menu h2 {
+            color: #6cf;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #main-menu {
+                width: 90%;
+                max-width: 300px;
+            }
+
+            .menu-button {
+                width: 90%;
+            }
+
+            #mobile-controls {
+                display: flex;
+            }
+
+            #joystick-area {
+                display: block;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Main Menu -->
+        <div id="main-menu" class="ui-panel">
+            <h1>Galaxy Turret Wars</h1>
+            <button class="menu-button" id="start-button">Start Game</button>
+            <button class="menu-button" id="shop-button">Shop</button>
+            <button class="menu-button" id="controls-button">Controls</button>
+        </div>
+
+        <!-- Game Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Game UI -->
+        <div id="game-ui">
+            <div id="top-bar">
+                <div class="resource-display">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmY2M2NiIgZD0iTTExLjlINy41TDEyLDMuNWw0LjUsNy41aC00LjR2NGgtMS4ydi00TTYsMTYuNWgxMmwzLDVoLTE4bDMtNU0xMiwxMy41aC0xLjV2MS4yaDEuNXYtMS4yWiIvPjwvc3ZnPg==" class="resource-icon">
+                    <span id="coins-display">0</span>
+                </div>
+                <div class="resource-display" 
+id="crystaly1"
+>
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzZjZiIgZD0iTTEyLDIxLjM1TDEuNSwxNS4zNkwxMiwzLjVMMjIuNSwxNS4zNkwxMiwyMS4zNU0xMiwxNS4zN2E0LjUsNC41LDAsMSwwLDQuNS00LjVBNC41LDQuNSwwLDAsMCwxMiwxNS4zN1oiLz48L3N2Zz4=" class="resource-icon">
+                    <span id="crystals-display">0</span>
+                </div>
+            </div>
+            <div id="wave-info">Wave: 1</div>
+            <button id="pause-button">II</button>
+        </div>
+
+        <!-- Shop UI -->
+        <div id="shop-ui" class="ui-panel">
+            <div id="shop-header">
+                <h3>Shop</h3>
+                <button id="close-shop">X</button>
+            </div>
+            <div id="shop-tabs">
+                <div class="shop-tab active" data-tab="turrets">Turrets</div>
+                <div class="shop-tab" data-tab="ship">Ship Upgrades</div>
+            </div>
+            <div class="shop-items" id="turrets-tab">
+                <!-- Turret items will be added here by JS -->
+            </div>
+            <div class="shop-items" id="ship-tab" style="display: none;">
+                <!-- Ship upgrades will be added here by JS -->
+            </div>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div id="mobile-controls">
+            <div class="mobile-button" id="mobile-shoot">FIRE</div>
+            <div class="mobile-button" id="mobile-shop">SHOP</div>
+        </div>
+
+        <div id="joystick-area">
+            <div id="joystick-base"></div>
+            <div id="joystick-handle"></div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="ui-panel">
+            <h2>Game Over</h2>
+            <p>You survived <span id="final-wave">0</span> waves!</p>
+            <button class="menu-button" id="restart-button">Play Again</button>
+            <button class="menu-button" id="menu-button">Main Menu</button>
+        </div>
+
+        <!-- Pause Menu -->
+        <div id="pause-menu" class="ui-panel">
+            <h2>Game Paused</h2>
+            <button class="menu-button" id="resume-button">Resume</button>
+            <button class="menu-button" id="quit-button">Quit to Menu</button>
+        </div>
+    </div>
+
+    <script>
+        // Game Constants
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        const PLAYER_SPEED = 5;
+        const ENEMY_SPAWN_RATE = 130; // frames
+        const WAVE_DURATION = 1000; // frames
+        const BOSS_WAVE_INTERVAL = 5;
+
+        // Game Variables
+        let canvas, ctx;
+        let gameState = 'menu'; // menu, playing, paused, gameover
+        let gameFrame = 0;
+        let wave = 1;
+        let coins = 0;
+        let crystals = 0;
+        let enemies = [];
+        let projectiles = [];
+        let explosions = [];
+        let particles = [];
+        let lastEnemySpawn = 0;
+        let waveTimer = 0;
+        let isMobile = false;
+
+        // Player Object
+        const player = {
+            x: GAME_WIDTH / 2,
+            y: GAME_HEIGHT - 60,
+            width: 40,
+            height: 40,
+            speed: PLAYER_SPEED,
+            health: 100,
+            maxHealth: 100,
+            turrets: [],
+            turretSlots: 2,
+            lastShot: 0,
+            shootDelay: 15,
+            direction: { x: 0, y: 0 },
+            isShooting: false
+        };
+
+        // Turret Types
+        const turretTypes = {
+            basic: {
+                name: "Basic Turret",
+                cost: 100,
+                damage: 13,
+                range: 250,
+                fireRate: 17,
+                color: "#ffcc66",
+                description: "Standard issue turret with balanced stats"
+            },
+            laser: {
+                name: "Laser Turret",
+                cost: 300,
+                damage: 5,
+                range: 350,
+                fireRate: 5,
+                color: "#ff6666",
+                description: "Rapid-fire laser with long range but low damage"
+            },
+            plasma: {
+                name: "Plasma Turret",
+                cost: 500,
+                damage: 70,
+                range: 200,
+                fireRate: 30,
+                color: "#66ff66",
+                description: "Powerful plasma shots with splash damage"
+            },
+            auto: {
+                name: "Auto Turret",
+                cost: 800,
+                damage: 17,
+                range: 300,
+                fireRate: 13,
+                color: "#6666ff",
+                description: "Automatically targets enemies in range"
+            }
+        };
+
+        // Ship Upgrades
+        const shipUpgrades = {
+            health: {
+                name: "Health +50",
+                cost: 500,
+                crystalCost: 0,
+                description: "Increase max health by 50",
+                apply: () => {
+                    player.maxHealth += 50;
+                    player.health = player.maxHealth;
+                }
+            },
+            speed: {
+                name: "Speed +20%",
+                cost: 150,
+                crystalCost: 0,
+                description: "Increase movement speed by 20%",
+                apply: () => {
+                    player.speed *= 1.2;
+                }
+            },
+            slots: {
+                name: "Turret Slot",
+                cost: 500,
+                crystalCost: 1,
+                description: "Add an additional turret slot",
+                apply: () => {
+                    player.turretSlots += 1;
+                }
+            },
+            shield: {
+                name: "Energy Shield",
+                cost: 800,
+                crystalCost: 3,
+                description: "Gain a protective energy shield",
+                apply: () => {
+                    // This would be implemented with shield logic
+                }
+            }
+        };
+
+        // Enemy Types
+        const enemyTypes = {
+            basic: {
+                name: "Scout Ship",
+                health: 30,
+                speed: 2,
+                damage: 10,
+                color: "#ff6666",
+                size: 30,
+                score: 10,
+                coinDrop: 5
+            },
+            fast: {
+                name: "Interceptor",
+                health: 15,
+                speed: 4,
+                damage: 5,
+                color: "#66ff66",
+                size: 20,
+                score: 15,
+                coinDrop: 8
+            },
+            tank: {
+                name: "Battleship",
+                health: 100,
+                speed: 1,
+                damage: 20,
+                color: "#6666ff",
+                size: 50,
+                score: 30,
+                coinDrop: 20
+            },
+            boss: {
+                name: "Mothership",
+                health: 500,
+                speed: 0.5,
+                damage: 30,
+                color: "#ff66ff",
+                size: 80,
+                score: 100,
+                coinDrop: 100,
+                crystalDrop: 1
+            }
+        };
+
+        // Initialize the game
+        function initGame() {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Check if mobile
+            isMobile = /Mobi|Android/i.test(navigator.userAgent);
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load saved game
+            loadGame();
+            
+            // Start game loop
+            gameLoop();
+        }
+
+        // Resize canvas to fit window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Menu buttons
+            document.getElementById('start-button').addEventListener('click', startGame);
+            document.getElementById('shop-button').addEventListener('click', openShop);
+            document.getElementById('controls-button').addEventListener('click', showControls);
+            document.getElementById('restart-button').addEventListener('click', startGame);
+            document.getElementById('menu-button').addEventListener('click', showMenu);
+            document.getElementById('resume-button').addEventListener('click', togglePause);
+            document.getElementById('quit-button').addEventListener('click', showMenu);
+            document.getElementById('pause-button').addEventListener('click', togglePause);
+            
+            // Shop buttons
+            document.getElementById('close-shop').addEventListener('click', closeShop);
+            
+            // Tab buttons
+            const tabs = document.querySelectorAll('.shop-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    document.getElementById('turrets-tab').style.display = 'none';
+                    document.getElementById('ship-tab').style.display = 'none';
+                    
+                    if (tab.dataset.tab === 'turrets') {
+                        document.getElementById('turrets-tab').style.display = 'grid';
+                    } else {
+                        document.getElementById('ship-tab').style.display = 'grid';
+                    }
+                });
+            });
+            
+            // Keyboard controls
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            
+            // Mouse controls
+            canvas.addEventListener('mousedown', () => { player.isShooting = true; });
+            canvas.addEventListener('mouseup', () => { player.isShooting = false; });
+            canvas.addEventListener('touchstart', (e) => { 
+                e.preventDefault();
+                player.isShooting = true; 
+            });
+            canvas.addEventListener('touchend', (e) => { 
+                e.preventDefault();
+                player.isShooting = false; 
+            });
+            
+            // Mobile controls
+            document.getElementById('mobile-shoot').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                player.isShooting = true;
+            });
+            document.getElementById('mobile-shoot').addEventListener('touchend', (e) => {
+                e.preventDefault();
+                player.isShooting = false;
+            });
+            document.getElementById('mobile-shop').addEventListener('click', openShop);
+            
+            // Joystick for mobile
+            setupJoystick();
+        }
+
+        // Setup virtual joystick for mobile
+        function setupJoystick() {
+            if (!isMobile) return;
+            
+            const joystickArea = document.getElementById('joystick-area');
+            const joystickHandle = document.getElementById('joystick-handle');
+            const joystickBase = document.getElementById('joystick-base');
+            
+            let activeTouchId = null;
+            let baseRect = null;
+            const maxDistance = 50;
+            
+            joystickArea.addEventListener('touchstart', (e) => {
+                if (activeTouchId !== null) return;
+                
+                const touch = e.touches[0];
+                activeTouchId = touch.identifier;
+                baseRect = joystickBase.getBoundingClientRect();
+                e.preventDefault();
+            });
+            
+            joystickArea.addEventListener('touchmove', (e) => {
+                if (activeTouchId === null) return;
+                
+                // Find our touch
+                let touch = null;
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].identifier === activeTouchId) {
+                        touch = e.touches[i];
+                        break;
+                    }
+                }
+                if (!touch) return;
+                
+                e.preventDefault();
+                
+                // Calculate position relative to base
+                const x = touch.clientX - baseRect.left - baseRect.width / 2;
+                const y = touch.clientY - baseRect.top - baseRect.height / 2;
+                
+                // Calculate distance and angle
+                const distance = Math.min(Math.sqrt(x * x + y * y), maxDistance);
+                const angle = Math.atan2(y, x);
+                
+                // Position handle
+                const handleX = Math.cos(angle) * distance;
+                const handleY = Math.sin(angle) * distance;
+                
+                joystickHandle.style.transform = `translate(${handleX}px, ${handleY}px)`;
+                
+                // Set player direction
+                player.direction.x = Math.cos(angle) * (distance / maxDistance);
+                player.direction.y = Math.sin(angle) * (distance / maxDistance);
+            });
+            
+            joystickArea.addEventListener('touchend', (e) => {
+                if (activeTouchId === null) return;
+                
+                // Check if our touch ended
+                let touchEnded = true;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === activeTouchId) {
+                        touchEnded = true;
+                        break;
+                    }
+                }
+                
+                if (touchEnded) {
+                    activeTouchId = null;
+                    joystickHandle.style.transform = 'translate(0, 0)';
+                    player.direction.x = 0;
+                    player.direction.y = 0;
+                }
+                
+                e.preventDefault();
+            });
+        }
+
+        // Handle keyboard input
+        function handleKeyDown(e) {
+            if (gameState !== 'playing') return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    player.direction.x = -1;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    player.direction.x = 1;
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    player.direction.y = -1;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    player.direction.y = 1;
+                    break;
+                case ' ':
+                    player.isShooting = true;
+                    break;
+                case 'Escape':
+                    togglePause();
+                    break;
+            }
+        }
+
+        function handleKeyUp(e) {
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    if (player.direction.x === -1) player.direction.x = 0;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    if (player.direction.x === 1) player.direction.x = 0;
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    if (player.direction.y === -1) player.direction.y = 0;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    if (player.direction.y === 1) player.direction.y = 0;
+                    break;
+                case ' ':
+                    player.isShooting = false;
+                    break;
+            }
+        }
+
+        // Game state management
+        function startGame() {
+            // Reset game state
+            gameState = 'playing';
+            gameFrame = 0;
+            wave = 1;
+            enemies = [];
+            projectiles = [];
+            explosions = [];
+            particles = [];
+            lastEnemySpawn = 0;
+            waveTimer = 0;
+            
+            // Reset player
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 60;
+            player.health = player.maxHealth;
+            player.turrets = [];
+            
+            // Add a basic turret to start
+            if (player.turrets.length < player.turretSlots) {
+                player.turrets.push({
+                    type: 'basic',
+                    ...turretTypes.basic,
+                    angle: 0,
+                    lastShot: 0
+                });
+            }
+            
+            // Update UI
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            document.getElementById('shop-ui').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+            
+            updateUI();
+        }
+
+        function showMenu() {
+            gameState = 'menu';
+            document.getElementById('main-menu').style.display = 'flex';
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('shop-ui').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                document.getElementById('pause-menu').style.display = 'block';
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                document.getElementById('pause-menu').style.display = 'none';
+            }
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('final-wave').textContent = wave;
+            saveGame(); // Save progress when game over
+        }
+
+        function openShop() {
+            if (gameState !== 'playing') return;
+            
+            gameState = 'paused';
+            document.getElementById('shop-ui').style.display = 'block';
+            
+            // Populate turret shop
+            const turretsTab = document.getElementById('turrets-tab');
+            turretsTab.innerHTML = '';
+            
+            for (const [type, turret] of Object.entries(turretTypes)) {
+                const item = document.createElement('div');
+                item.className = 'shop-item';
+                item.dataset.type = type;
+                item.dataset.category = 'turret';
+                
+                item.innerHTML = `
+                    <div class="shop-item-icon" style="background-color: ${turret.color}; width: 30px; height: 30px; border-radius: 50%;"></div>
+                    <h4>${turret.name}</h4>
+                    <p>Damage: ${turret.damage}</p>
+                    <p>Range: ${turret.range}</p>
+                    <p>Rate: ${turret.fireRate}</p>
+                    <div class="shop-item-price">$${turret.cost}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    if (player.turrets.length >= player.turretSlots) {
+                        alert('No available turret slots! Upgrade your ship to add more.');
+                        return;
+                    }
+                    
+                    if (coins >= turret.cost) {
+                        coins -= turret.cost;
+                        player.turrets.push({
+                            type: type,
+                            ...turret,
+                            angle: 0,
+                            lastShot: 0
+                        });
+                        updateUI();
+                        saveGame();
+                    } else {
+                        alert('Not enough coins!');
+                    }
+                });
+                
+                turretsTab.appendChild(item);
+            }
+            
+            // Populate ship upgrades
+            const shipTab = document.getElementById('ship-tab');
+            shipTab.innerHTML = '';
+            
+            for (const [id, upgrade] of Object.entries(shipUpgrades)) {
+                const item = document.createElement('div');
+                item.className = 'shop-item';
+                item.dataset.id = id;
+                item.dataset.category = 'upgrade';
+                
+                const costDisplay = upgrade.crystalCost > 0 
+                    ? `${upgrade.cost} coins + ${upgrade.crystalCost} crystals`
+                    : `${upgrade.cost} coins`;
+                
+                item.innerHTML = `
+                    <div class="shop-item-icon" style="background-color: #6cf; width: 30px; height: 30px; border-radius: 50%;"></div>
+                    <h4>${upgrade.name}</h4>
+                    <p>${upgrade.description}</p>
+                    <div class="shop-item-price">${costDisplay}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    if (coins >= upgrade.cost && crystals >= upgrade.crystalCost) {
+                        coins -= upgrade.cost;
+                        crystals -= upgrade.crystalCost;
+                        upgrade.apply();
+                        updateUI();
+                        saveGame();
+                    } else {
+                        alert('Not enough resources!');
+                    }
+                });
+                
+                shipTab.appendChild(item);
+            }
+        }
+
+        function closeShop() {
+            document.getElementById('shop-ui').style.display = 'none';
+            gameState = 'playing';
+        }
+
+        function showControls() {
+            alert("Controls:\n\nPC:\n- Arrow Keys or WASD to move\n- Space or Mouse Click to shoot\n- ESC to pause\n\nMobile:\n- Virtual joystick to move\n- Fire button to shoot\n- Shop button to open shop");
+        }
+
+        // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw starfield background
+            drawBackground();
+            
+            // Update game state based on current state
+            switch(gameState) {
+                case 'playing':
+                    updateGame();
+                    break;
+                case 'paused':
+                    // Just draw the current state
+                    break;
+                case 'menu':
+                case 'gameover':
+                    // Only background is drawn
+                    break;
+            }
+            
+            // Draw game objects
+            drawGame();
+            
+            // Continue the loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Update game state
+        function updateGame() {
+            gameFrame++;
+            
+            // Update player position
+            updatePlayer();
+            
+            // Spawn enemies
+            updateEnemySpawning();
+            
+            // Update all game objects
+            updateEnemies();
+            updateProjectiles();
+            updateExplosions();
+            updateParticles();
+            
+            // Check for collisions
+            checkCollisions();
+            
+            // Update wave timer
+            updateWave();
+            
+            // Update UI
+            updateUI();
+        }
+
+        function updatePlayer() {
+            // Move player based on direction
+            if (player.direction.x !== 0) {
+                player.x += player.direction.x * player.speed;
+                player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, player.x));
+            }
+            
+            if (player.direction.y !== 0) {
+                player.y += player.direction.y * player.speed;
+                player.y = Math.max(canvas.height / 2, Math.min(canvas.height - player.height / 2, player.y));
+            }
+            
+            // Player shooting
+            if (player.isShooting && gameFrame - player.lastShot >= player.shootDelay) {
+                shootPlayer();
+                player.lastShot = gameFrame;
+            }
+            
+            // Update turrets
+            updateTurrets();
+        }
+
+        function shootPlayer() {
+            // Create a projectile from the player
+            projectiles.push({
+                x: player.x,
+                y: player.y - player.height / 2,
+                width: 5,
+                height: 15,
+                speed: -10,
+                damage: 20,
+                color: '#6cf'
+            });
+            
+            // Play shoot sound
+            playSound('shoot');
+        }
+
+        function updateTurrets() {
+            for (const turret of player.turrets) {
+                // Find closest enemy in range
+                let closestEnemy = null;
+                let closestDistance = turret.range;
+                
+                for (const enemy of enemies) {
+                    const dx = enemy.x - player.x;
+                    const dy = enemy.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestEnemy = enemy;
+                    }
+                }
+                
+                if (closestEnemy) {
+                    // Calculate angle to enemy
+                    const dx = closestEnemy.x - player.x;
+                    const dy = closestEnemy.y - player.y;
+                    turret.angle = Math.atan2(dy, dx);
+                    
+                    // Shoot if cooldown is over
+                    if (gameFrame - turret.lastShot >= turret.fireRate) {
+                        turret.lastShot = gameFrame;
+                        
+                        // Create projectile
+                        projectiles.push({
+                            x: player.x + Math.cos(turret.angle) * 20,
+                            y: player.y + Math.sin(turret.angle) * 20,
+                            width: 5,
+                            height: 5,
+                            speed: 8,
+                            damage: turret.damage,
+                            color: turret.color,
+                            angle: turret.angle,
+                            isTurret: true
+                        });
+                        
+                        // Play sound based on turret type
+                        playSound(turret.type === 'laser' ? 'laser' : 'shoot');
+                    }
+                }
+            }
+        }
+
+        function updateEnemySpawning() {
+            if (gameFrame - lastEnemySpawn >= ENEMY_SPAWN_RATE / (wave * 0.2 + 1)) {
+                lastEnemySpawn = gameFrame;
+                
+                // Spawn enemy based on wave
+                let enemyType;
+                const rand = Math.random();
+                
+                if (wave % BOSS_WAVE_INTERVAL === 0 && enemies.filter(e => e.type === 'boss').length === 0) {
+                    // Boss wave
+                    enemyType = 'boss';
+                } else {
+                    // Regular wave
+                    if (rand < 0.6) {
+                        enemyType = 'basic';
+                    } else if (rand < 0.85) {
+                        enemyType = 'fast';
+                    } else {
+                        enemyType = 'tank';
+                    }
+                }
+                
+                // Create enemy
+                const size = enemyTypes[enemyType].size;
+                const x = Math.random() * (canvas.width - size * 2) + size;
+                const y = -size;
+                
+                enemies.push({
+                    type: enemyType,
+                    ...enemyTypes[enemyType],
+                    x: x,
+                    y: y,
+                    targetX: player.x,
+                    targetY: player.y,
+                    angle: 0
+                });
+            }
+        }
+
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                
+                // Move enemy
+                if (enemy.type === 'boss') {
+                    // Boss moves toward player but more slowly
+                    enemy.targetX = player.x;
+                    enemy.targetY = player.y + 100;
+                    
+                    const dx = enemy.targetX - enemy.x;
+                    const dy = enemy.targetY - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 10) {
+                        enemy.x += (dx / distance) * enemy.speed;
+                        enemy.y += (dy / distance) * enemy.speed;
+                    }
+                    
+                    // Boss shoots occasionally
+                    if (gameFrame % 60 === 0) {
+                        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                        
+                        for (let j = 0; j < 3; j++) {
+                            projectiles.push({
+                                x: enemy.x,
+                                y: enemy.y + enemy.size / 2,
+                                width: 10,
+                                height: 10,
+                                speed: 3,
+                                damage: enemy.damage / 2,
+                                color: '#ff66ff',
+                                angle: angle + (j - 1) * 0.3
+                            });
+                        }
+                    }
+                } else {
+                    // Regular enemies move toward player or randomly
+                    if (Math.random() < 0.02) {
+                        enemy.targetX = player.x + (Math.random() - 0.5) * 200;
+                        enemy.targetY = player.y + (Math.random() - 0.5) * 200;
+                    }
+                    
+                    const dx = enemy.targetX - enemy.x;
+                    const dy = enemy.targetY - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 10) {
+                        enemy.x += (dx / distance) * enemy.speed;
+                        enemy.y += (dy / distance) * enemy.speed;
+                    }
+                }
+                
+                // Update angle for drawing
+                enemy.angle = Math.atan2(enemy.targetY - enemy.y, enemy.targetX - enemy.x);
+                
+                // Remove if off screen
+                if (enemy.y > canvas.height + enemy.size) {
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+
+        function updateProjectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                
+                // Move projectile
+                if (proj.angle !== undefined) {
+                    // Angle-based movement (for turrets and boss shots)
+                    proj.x += Math.cos(proj.angle) * proj.speed;
+                    proj.y += Math.sin(proj.angle) * proj.speed;
+                } else {
+                    // Straight movement (player shots)
+                    proj.y += proj.speed;
+                }
+                
+                // Remove if off screen
+                if (proj.y < -proj.height || proj.y > canvas.height + proj.height || 
+                    proj.x < -proj.width || proj.x > canvas.width + proj.width) {
+                    projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateExplosions() {
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                explosions[i].frame++;
+                if (explosions[i].frame >= explosions[i].maxFrame) {
+                    explosions.splice(i, 1);
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].x += particles[i].vx;
+                particles[i].y += particles[i].vy;
+                particles[i].life--;
+                
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function checkCollisions() {
+            // Player projectiles vs enemies
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                
+                // Skip enemy projectiles
+                if (proj.speed > 0 || proj.isTurret) continue;
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    
+                    if (checkCollision(proj, enemy)) {
+                        // Damage enemy
+                        enemy.health -= proj.damage;
+                        
+                        // Create explosion
+                        createExplosion(proj.x, proj.y, proj.color);
+                        
+                        // Remove projectile
+                        projectiles.splice(i, 1);
+                        
+                        // Check if enemy died
+                        if (enemy.health <= 0) {
+                            // Add score and coins
+                            coins += enemy.coinDrop;
+                            if (enemy.crystalDrop) {
+                                crystals += enemy.crystalDrop;
+                            }
+                            
+                            // Create explosion and particles
+                            createExplosion(enemy.x, enemy.y, enemy.color);
+                            createParticles(enemy.x, enemy.y, enemy.color, 20);
+                            
+                            // Play explosion sound
+                            playSound('explosion');
+                            
+                            // Remove enemy
+                            enemies.splice(j, 1);
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+            
+            // Enemy projectiles vs player
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                
+                // Skip player projectiles
+                if (proj.speed < 0) continue;
+                
+                if (checkCollision(proj, player)) {
+                    // Damage player
+                    player.health -= proj.damage;
+                    
+                    // Create explosion
+                    createExplosion(proj.x, proj.y, proj.color);
+                    
+                    // Remove projectile
+                    projectiles.splice(i, 1);
+                    
+                    // Check if player died
+                    if (player.health <= 0) {
+                        gameOver();
+                    }
+                    
+                    // Play hit sound
+                    playSound('hit');
+                }
+            }
+            
+            // Turret projectiles vs enemies
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                
+                // Skip if not turret projectile
+                if (!proj.isTurret) continue;
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    
+                    if (checkCollision(proj, enemy)) {
+                        // Damage enemy
+                        enemy.health -= proj.damage;
+                        
+                        // Create explosion (smaller for turret shots)
+                        createExplosion(proj.x, proj.y, proj.color, 10);
+                        
+                        // Remove projectile
+                        projectiles.splice(i, 1);
+                        
+                        // Check if enemy died
+                        if (enemy.health <= 0) {
+                            // Add score and coins
+                            coins += enemy.coinDrop;
+                            if (enemy.crystalDrop) {
+                                crystals += enemy.crystalDrop;
+                            }
+                            
+                            // Create explosion and particles
+                            createExplosion(enemy.x, enemy.y, enemy.color);
+                            createParticles(enemy.x, enemy.y, enemy.color, 20);
+                            
+                            // Play explosion sound
+                            playSound('explosion');
+                            
+                            // Remove enemy
+                            enemies.splice(j, 1);
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+            
+            // Enemy vs player collision
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                
+                if (checkCollision(enemy, player)) {
+                    // Damage player
+                    player.health -= enemy.damage * 0.1; // Continuous damage
+                    
+                    // Create particles
+                    createParticles(player.x, player.y, '#ffffff', 5);
+                    
+                    // Check if player died
+                    if (player.health <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+
+        function checkCollision(obj1, obj2) {
+            // Simple circle collision detection
+            const dx = obj1.x - obj2.x;
+            const dy = obj1.y - obj2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            const radius1 = obj1.width ? obj1.width / 2 : obj1.size / 2;
+            const radius2 = obj2.width ? obj2.width / 2 : obj2.size / 2;
+            
+            return distance < radius1 + radius2;
+        }
+
+        function updateWave() {
+            waveTimer++;
+            
+            if (waveTimer >= WAVE_DURATION) {
+                wave++;
+                waveTimer = 0;
+                
+                // Play sound for new wave
+                playSound('wave');
+                
+                // Make sure all enemies are cleared before next wave
+                enemies = [];
+            }
+            
+            // Update wave display
+            document.getElementById('wave-info').textContent = `Wave: ${wave}`;
+            
+            // Pulse effect on boss waves
+            if (wave % BOSS_WAVE_INTERVAL === 0) {
+                document.getElementById('wave-info').classList.add('pulse');
+                document.getElementById('wave-info').style.borderColor = '#ff66ff';
+            } else {
+                document.getElementById('wave-info').classList.remove('pulse');
+                document.getElementById('wave-info').style.borderColor = '#6cf';
+            }
+        }
+
+        function createExplosion(x, y, color, size = 20) {
+            explosions.push({
+                x: x,
+                y: y,
+                size: size,
+                color: color,
+                frame: 0,
+                maxFrame: 10
+            });
+        }
+
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    size: Math.random() * 3 + 1,
+                    color: color,
+                    vx: Math.random() * 6 - 3,
+                    vy: Math.random() * 6 - 3,
+                    life: Math.random() * 30 + 20
+                });
+            }
+        }
+
+        // Draw game objects
+        function drawGame() {
+            // Draw player
+            drawPlayer();
+            
+            // Draw turrets
+            drawTurrets();
+            
+            // Draw enemies
+            drawEnemies();
+            
+            // Draw projectiles
+            drawProjectiles();
+            
+            // Draw explosions
+            drawExplosions();
+            
+            // Draw particles
+            drawParticles();
+            
+            // Draw UI
+            drawUI();
+        }
+
+        function drawBackground() {
+            // Draw starfield
+            ctx.fillStyle = '#000033';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw stars
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < 200; i++) {
+                const x = (i * 12345) % canvas.width;
+                const y = (i * 54321) % canvas.height;
+                const size = (i % 3) * 0.5 + 0.5;
+                ctx.fillRect(x, y, size, size);
+            }
+            
+            // Draw nebula effect
+            if (gameFrame % 600 < 300) {
+                const gradient = ctx.createRadialGradient(
+                    canvas.width / 2, 
+                    canvas.height / 2, 
+                    0, 
+                    canvas.width / 2, 
+                    canvas.height / 2, 
+                    Math.max(canvas.width, canvas.height) / 2
+                );
+                gradient.addColorStop(0, `rgba(100, 50, 150, ${0.1 + Math.sin(gameFrame * 0.01) * 0.05})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 50, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function drawPlayer() {
+            if (gameState === 'menu') return;
+            
+            // Draw ship body
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // Ship color changes when damaged
+            const healthPercent = player.health / player.maxHealth;
+            const shipColor = healthPercent < 0.3 ? 
+                `hsl(0, 80%, ${50 + healthPercent * 20}%)` : 
+                `hsl(200, 80%, ${50 + healthPercent * 20}%)`;
+            
+            ctx.fillStyle = shipColor;
+            
+            // Draw ship (triangle)
+            ctx.beginPath();
+            ctx.moveTo(0, -player.height / 2);
+            ctx.lineTo(-player.width / 2, player.height / 2);
+            ctx.lineTo(player.width / 2, player.height / 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw engine glow when moving
+            if (player.direction.y > 0 || player.direction.x !== 0) {
+                ctx.fillStyle = `rgba(255, 200, 100, ${0.5 + Math.sin(gameFrame * 0.2) * 0.3})`;
+                ctx.beginPath();
+                ctx.moveTo(-player.width / 4, player.height / 2);
+                ctx.lineTo(0, player.height / 2 + 10);
+                ctx.lineTo(player.width / 4, player.height / 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            ctx.restore();
+            
+            // Draw health bar
+            if (player.health < player.maxHealth) {
+                const barWidth = 50;
+                const barHeight = 5;
+                const healthWidth = (player.health / player.maxHealth) * barWidth;
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(player.x - barWidth / 2, player.y + player.height / 2 + 5, barWidth, barHeight);
+                
+                ctx.fillStyle = healthPercent > 0.5 ? '#66ff66' : healthPercent > 0.2 ? '#ffff66' : '#ff6666';
+                ctx.fillRect(player.x - barWidth / 2, player.y + player.height / 2 + 5, healthWidth, barHeight);
+            }
+        }
+
+        function drawTurrets() {
+            for (const turret of player.turrets) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(turret.angle);
+                
+                // Draw turret base
+                ctx.fillStyle = '#333';
+                ctx.fillRect(-8, -8, 16, 16);
+                
+                // Draw turret barrel
+                ctx.fillStyle = turret.color;
+                ctx.fillRect(0, -3, 20, 6);
+                
+                ctx.restore();
+            }
+        }
+
+        function drawEnemies() {
+            for (const enemy of enemies) {
+                ctx.save();
+                ctx.translate(enemy.x, enemy.y);
+                ctx.rotate(enemy.angle + Math.PI / 2);
+                
+                // Draw enemy ship
+                ctx.fillStyle = enemy.color;
+                
+                if (enemy.type === 'boss') {
+                    // Boss is a larger, more complex shape
+                    ctx.beginPath();
+                    ctx.moveTo(0, -enemy.size / 2);
+                    ctx.lineTo(-enemy.size / 3, -enemy.size / 4);
+                    ctx.lineTo(-enemy.size / 2, enemy.size / 4);
+                    ctx.lineTo(-enemy.size / 4, enemy.size / 2);
+                    ctx.lineTo(enemy.size / 4, enemy.size / 2);
+                    ctx.lineTo(enemy.size / 2, enemy.size / 4);
+                    ctx.lineTo(enemy.size / 3, -enemy.size / 4);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Draw boss details
+                    ctx.fillStyle = '#ffccff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, enemy.size / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Regular enemies are simpler
+                    ctx.beginPath();
+                    ctx.moveTo(0, -enemy.size / 2);
+                    ctx.lineTo(-enemy.size / 2, enemy.size / 2);
+                    ctx.lineTo(enemy.size / 2, enemy.size / 2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+                
+                // Draw health bar for enemies
+                const barWidth = enemy.size;
+                const barHeight = 3;
+                const healthPercent = enemy.health / enemyTypes[enemy.type].health;
+                const healthWidth = healthPercent * barWidth;
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.size / 2 - 10, barWidth, barHeight);
+                
+                ctx.fillStyle = healthPercent > 0.5 ? '#66ff66' : healthPercent > 0.2 ? '#ffff66' : '#ff6666';
+                ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.size / 2 - 10, healthWidth, barHeight);
+            }
+        }
+
+        function drawProjectiles() {
+            for (const proj of projectiles) {
+                ctx.save();
+                
+                if (proj.angle !== undefined) {
+                    ctx.translate(proj.x, proj.y);
+                    ctx.rotate(proj.angle);
+                    
+                    // Draw angled projectile (for turrets and boss)
+                    ctx.fillStyle = proj.color;
+                    ctx.fillRect(0, -proj.height / 2, proj.width, proj.height);
+                } else {
+                    // Draw straight projectile (player)
+                    ctx.fillStyle = proj.color;
+                    ctx.fillRect(proj.x - proj.width / 2, proj.y - proj.height / 2, proj.width, proj.height);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        function drawExplosions() {
+            for (const explosion of explosions) {
+                const progress = explosion.frame / explosion.maxFrame;
+                const size = explosion.size * (1 + progress * 2);
+                const alpha = 1 - progress;
+                
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                
+                // Draw explosion
+                const gradient = ctx.createRadialGradient(
+                    explosion.x, explosion.y, 0, 
+                    explosion.x, explosion.y, size
+                );
+                gradient.addColorStop(0, explosion.color);
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        function drawParticles() {
+            for (const particle of particles) {
+                ctx.save();
+                ctx.globalAlpha = particle.life / 50;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(
+                    particle.x - particle.size / 2, 
+                    particle.y - particle.size / 2, 
+                    particle.size, 
+                    particle.size
+                );
+                ctx.restore();
+            }
+        }
+
+        function drawUI() {
+            if (gameState !== 'playing') return;
+            
+            // Draw wave timer
+            const waveProgress = waveTimer / WAVE_DURATION;
+            ctx.fillStyle = 'rgba(108, 204, 255, 0.3)';
+            ctx.fillRect(0, 0, canvas.width * waveProgress, 5);
+        }
+
+        function updateUI() {
+            document.getElementById('coins-display').textContent = coins;
+            document.getElementById('crystals-display').textContent = crystals;
+        }
+
+        // Sound effects
+        function playSound(type) {
+            // In a real implementation, you would play actual sound files
+            // This is a placeholder that logs sound events
+            const sounds = {
+                shoot: () => console.log('pew!'),
+                laser: () => console.log('zap!'),
+                explosion: () => console.log('boom!'),
+                hit: () => console.log('ouch!'),
+                wave: () => console.log('new wave!')
+            };
+            
+            if (sounds[type]) sounds[type]();
+        }
+
+        // Save/load game
+        function saveGame() {
+            const gameData = {
+                coins: coins,
+                crystals: crystals,
+                maxHealth: player.maxHealth,
+                speed: player.speed,
+                turretSlots: player.turretSlots,
+                turrets: player.turrets.map(t => t.type)
+            };
+            
+            localStorage.setItem('galaxyTurretWarsSave', JSON.stringify(gameData));
+        }
+
+        function loadGame() {
+            const savedData = localStorage.getItem('galaxyTurretWarsSave');
+            if (!savedData) return;
+            
+            const gameData = JSON.parse(savedData);
+            
+            coins = gameData.coins || 0;
+            crystals = gameData.crystals || 0;
+            player.maxHealth = gameData.maxHealth || 100;
+            player.health = player.maxHealth;
+            player.speed = gameData.speed || PLAYER_SPEED;
+            player.turretSlots = gameData.turretSlots || 2;
+            
+            // Load turrets
+            player.turrets = [];
+            if (gameData.turrets) {
+                for (const type of gameData.turrets) {
+                    if (turretTypes[type]) {
+                        player.turrets.push({
+                            type: type,
+                            ...turretTypes[type],
+                            angle: 0,
+                            lastShot: 0
+                        });
+                    }
+                }
+            }
+            
+            // Ensure at least one turret
+            if (player.turrets.length === 0 && player.turretSlots > 0) {
+                player.turrets.push({
+                    type: 'basic',
+                    ...turretTypes.basic,
+                    angle: 0,
+                    lastShot: 0
+                });
+            }
+            
+            updateUI();
+        }
+
+        // Start the game when the page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
